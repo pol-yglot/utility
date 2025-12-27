@@ -159,14 +159,29 @@ public class SecurityKeyController {
      * 발급 상태의 키만 추출해 엑셀 파일로 제공
      * DataLoader에서 중복 발급 키를 정리하므로 첫 번째 레코드만 선택
      * 금융 시스템의 감사 요구사항을 위해 파일명에 타임스탬프 대신 고정명 사용
+     * 사업자번호를 비밀번호로 Excel 파일 암호화하여 보안 강화
      *
      * @param response HTTP 응답 객체 (파일 다운로드용)
+     * @param businessNo 사업자번호 (비밀번호로 사용)
      * @throws IOException 파일 생성 중 발생할 수 있는 예외
-     * @apiNote GET /api/v1/keys/export
-     * @example curl -X GET "http://localhost:8080/api/v1/keys/export" -o security-keys-issued.xlsx
+     * @apiNote GET /api/v1/keys/export?businessNo=1234567890
+     * @example curl -X GET "http://localhost:8080/api/v1/keys/export?businessNo=1234567890" -o security-keys-issued.xlsx
      */
     @GetMapping(value = "/api/v1/keys/export")
-    public void exportExcel(HttpServletResponse response) throws IOException {
+    public void exportExcel(HttpServletResponse response, @RequestParam String businessNo, @RequestParam(required = false) String status) throws IOException {
+
+        // 사업자번호 검증
+        if (businessNo == null || businessNo.trim().isEmpty() || !businessNo.matches("\\d{10}")) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "유효한 사업자번호를 입력해주세요");
+            return;
+        }
+
+        // DB에서 사업자번호 존재 여부 확인
+        Optional<Partner> partner = partnerRepository.findByBusinessNo(businessNo);
+        if (!partner.isPresent()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "등록되지 않은 사업자번호입니다");
+            return;
+        }
 
         // 발급 상태 키만 추출 - DataLoader에서 중복 정리 보장
         java.util.List<SecurityKey> issued = repository.findByStatus("발급");
@@ -183,6 +198,7 @@ public class SecurityKeyController {
         String filename = "security-keys-issued.xlsx";
         response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
 
-        excelExporter.export(toExport, response.getOutputStream());
+        // 사업자번호를 비밀번호로 사용하여 Excel 파일 암호화
+        excelExporter.export(toExport, response.getOutputStream(), businessNo);
     }
 }

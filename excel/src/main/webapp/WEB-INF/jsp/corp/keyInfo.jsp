@@ -145,7 +145,7 @@
                     var status = statusEl ? statusEl.value : "";
 
                     window.location.href =
-                        "/api/v1/keys/export?status=" + encodeURIComponent(status);
+                        "/api/v1/keys/export?businessNo=" + encodeURIComponent(businessNo) + "&status=" + encodeURIComponent(status);
                 } else {
                     error.textContent = data && data.message
                         ? data.message

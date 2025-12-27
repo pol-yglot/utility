@@ -7,10 +7,15 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.crypt.EncryptionMode;
+import org.apache.poi.poifs.crypt.Encryptor;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.GeneralSecurityException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -32,8 +37,9 @@ public class SecurityKeyExcelExporter {
      * 보안키 목록을 Excel 파일로 내보내기
      * 표준 XLSX 포맷으로 헤더와 데이터 행 생성
      * null 값 처리 및 자동 컬럼 너비 조정
+     * 사업자번호를 비밀번호로 암호화하여 보안 강화
      */
-    public void export(List<SecurityKey> keys, OutputStream out) throws IOException {
+    public void export(List<SecurityKey> keys, OutputStream out, String password) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             XSSFSheet sheet = workbook.createSheet("SecurityKeys");
 
@@ -71,8 +77,43 @@ public class SecurityKeyExcelExporter {
                 sheet.autoSizeColumn(i);
             }
 
-            workbook.write(out);
+            // 암호화 적용
+            if (password != null && !password.trim().isEmpty()) {
+                encryptWorkbook(workbook, out, password);
+            } else {
+                workbook.write(out);
+                out.flush();
+            }
+        }
+    }
+
+    /**
+     * Excel 워크북을 암호화하여 출력 스트림에 작성
+     * 사업자번호를 비밀번호로 사용하여 파일 보호
+     *
+     * @param workbook 암호화할 워크북
+     * @param out 출력 스트림
+     * @param password 암호화 비밀번호 (사업자번호)
+     * @throws IOException 파일 처리 중 발생할 수 있는 예외
+     */
+    private void encryptWorkbook(XSSFWorkbook workbook, OutputStream out, String password) throws IOException {
+        try (POIFSFileSystem fs = new POIFSFileSystem()) {
+            EncryptionInfo info = new EncryptionInfo(EncryptionMode.agile);
+            Encryptor encryptor = info.getEncryptor();
+            encryptor.confirmPassword(password);
+
+            try (java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream()) {
+                workbook.write(bos);
+                try (java.io.ByteArrayInputStream bis = new java.io.ByteArrayInputStream(bos.toByteArray());
+                     java.io.OutputStream os = encryptor.getDataStream(fs)) {
+                    bis.transferTo(os);
+                }
+            }
+
+            fs.writeFilesystem(out);
             out.flush();
+        } catch (GeneralSecurityException e) {
+            throw new IOException("Excel 파일 암호화 중 오류 발생", e);
         }
     }
 
