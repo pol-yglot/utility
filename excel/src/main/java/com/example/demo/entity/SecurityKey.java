@@ -3,6 +3,7 @@ package com.example.demo.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @Entity
@@ -153,5 +154,18 @@ public class SecurityKey {
 
     public Date getDeletedAtAsDate() {
         return deletedAt == null ? null : Date.from(deletedAt.atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    // Getters for formatted date strings to avoid EL conversion issues
+    public String getCreatedAtFormatted() {
+        return createdAt == null ? "" : createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    public String getUpdatedAtFormatted() {
+        return updatedAt == null ? "" : updatedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    public String getDeletedAtFormatted() {
+        return deletedAt == null ? "" : deletedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 }

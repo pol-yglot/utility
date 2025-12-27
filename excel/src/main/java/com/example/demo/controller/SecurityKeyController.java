@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.SecurityKey;
+import com.example.demo.entity.Partner;
 import com.example.demo.repository.SecurityKeyRepository;
+import com.example.demo.repository.PartnerRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,6 +15,8 @@ import java.io.IOException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 보안키 관리 메인 컨트롤러
@@ -25,14 +29,16 @@ public class SecurityKeyController {
 
     private final SecurityKeyRepository repository;
     private final SecurityKeyExcelExporter excelExporter;
+    private final PartnerRepository partnerRepository;
 
     /**
      * 생성자 주입으로 의존성 설정
      * 리포지토리와 Excel 내보내기 서비스 주입
      */
-    public SecurityKeyController(SecurityKeyRepository repository, SecurityKeyExcelExporter excelExporter) {
+    public SecurityKeyController(SecurityKeyRepository repository, SecurityKeyExcelExporter excelExporter, PartnerRepository partnerRepository) {
         this.repository = repository;
         this.excelExporter = excelExporter;
+        this.partnerRepository = partnerRepository;
     }
 
     /**
@@ -97,6 +103,43 @@ public class SecurityKeyController {
             return ResponseEntity.ok(repository.findByServiceCd(serviceCd));
         }
         return ResponseEntity.ok(repository.findAll());
+    }
+
+    /**
+     * 사업자번호 검증 API
+     * 사업자번호 존재 여부 확인
+     * Excel 다운로드 권한 검증용
+     */
+    @PostMapping(value = "/api/v1/validate-business-no", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> validateBusinessNo(@RequestBody Map<String, String> request) {
+        String businessNo = request.get("businessNo");
+        Map<String, Object> response = new HashMap<>();
+
+        if (businessNo == null || businessNo.trim().isEmpty()) {
+            response.put("valid", false);
+            response.put("message", "사업자번호를 입력해주세요");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        // 10자리 숫자 검증
+        if (!businessNo.matches("\\d{10}")) {
+            response.put("valid", false);
+            response.put("message", "사업자번호를 확인해주세요");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        // DB에서 존재 여부 확인
+        Optional<Partner> partner = partnerRepository.findByBusinessNo(businessNo);
+        if (partner.isPresent()) {
+            response.put("valid", true);
+            response.put("message", "검증 성공");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("valid", false);
+            response.put("message", "사업자번호를 확인해주세요");
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     /**

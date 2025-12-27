@@ -1,7 +1,9 @@
 package com.example.demo.config;
 
 import com.example.demo.entity.SecurityKey;
+import com.example.demo.entity.Partner;
 import com.example.demo.repository.SecurityKeyRepository;
+import com.example.demo.repository.PartnerRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -14,13 +16,15 @@ import org.springframework.stereotype.Component;
 public class DataLoader implements CommandLineRunner {
 
     private final SecurityKeyRepository repository;
+    private final PartnerRepository partnerRepository;
 
     /**
      * 생성자 주입으로 리포지토리 의존성 설정
      * Spring의 자동 구성으로 의존성 주입
      */
-    public DataLoader(SecurityKeyRepository repository) {
+    public DataLoader(SecurityKeyRepository repository, PartnerRepository partnerRepository) {
         this.repository = repository;
+        this.partnerRepository = partnerRepository;
     }
 
     @Override
@@ -87,6 +91,18 @@ public class DataLoader implements CommandLineRunner {
             revoked.setMs("MS_REVOKED");
             revoked.setStatus("폐기");
             repository.save(revoked);
+        }
+
+        // Load test Partner data for business number validation
+        if (partnerRepository.count() == 0) {
+            Partner testPartner = new Partner();
+            testPartner.setPrtnrId("TEST001");
+            testPartner.setPartnerName("테스트 파트너");
+            testPartner.setBusinessNo("1234567890");
+            testPartner.setEmail("test@example.com");
+            testPartner.setStatus("활성");
+            partnerRepository.save(testPartner);
+            System.out.println("[DataLoader] Created test partner with business number: 1234567890");
         }
 
         System.out.println("[DataLoader] Current SecurityKey records:");
