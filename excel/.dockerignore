@@ -1,0 +1,14 @@
+target
+.git
+.gitignore
+.gitattributes
+.mvn
+**/.classpath
+**/.project
+**/.settings
+**/*.iml
+.idea
+.vscode
+*.log
+README.md
+pom.xml.asc
