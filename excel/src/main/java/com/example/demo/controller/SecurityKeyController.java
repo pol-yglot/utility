@@ -79,6 +79,11 @@ public class SecurityKeyController {
      * 보안키 단건 조회 API
      * ID 기반 조회로 특정 키의 상세 정보 확인
      * 존재하지 않는 ID는 404 반환으로 명확한 에러 처리
+     *
+     * @param id 조회할 보안키의 고유 ID
+     * @return SecurityKey 객체 또는 404 Not Found
+     * @apiNote GET /api/v1/keys/{id}
+     * @example curl -X GET "http://localhost:8080/api/v1/keys/1"
      */
     @GetMapping(value = "/api/v1/keys/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
@@ -109,6 +114,13 @@ public class SecurityKeyController {
      * 사업자번호 검증 API
      * 사업자번호 존재 여부 확인
      * Excel 다운로드 권한 검증용
+     *
+     * @param request 요청 본문에 포함된 사업자번호 (JSON: {"businessNo": "1234567890"})
+     * @return 검증 결과 (valid: true/false, message: 검증 메시지)
+     * @apiNote POST /api/v1/validate-business-no
+     * @example curl -X POST "http://localhost:8080/api/v1/validate-business-no" \
+     *         -H "Content-Type: application/json" \
+     *         -d '{"businessNo": "1234567890"}'
      */
     @PostMapping(value = "/api/v1/validate-business-no", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
@@ -147,12 +159,11 @@ public class SecurityKeyController {
      * 발급 상태의 키만 추출해 엑셀 파일로 제공
      * DataLoader에서 중복 발급 키를 정리하므로 첫 번째 레코드만 선택
      * 금융 시스템의 감사 요구사항을 위해 파일명에 타임스탬프 대신 고정명 사용
-     */
-    /**
-     * 보안키 Excel 다운로드 API
-     * 발급 상태의 키만 추출해 엑셀 파일로 제공
-     * DataLoader에서 중복 발급 키를 정리하므로 첫 번째 레코드만 선택
-     * 금융 시스템의 감사 요구사항을 위해 파일명에 타임스탬프 대신 고정명 사용
+     *
+     * @param response HTTP 응답 객체 (파일 다운로드용)
+     * @throws IOException 파일 생성 중 발생할 수 있는 예외
+     * @apiNote GET /api/v1/keys/export
+     * @example curl -X GET "http://localhost:8080/api/v1/keys/export" -o security-keys-issued.xlsx
      */
     @GetMapping(value = "/api/v1/keys/export")
     public void exportExcel(HttpServletResponse response) throws IOException {

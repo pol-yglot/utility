@@ -8,8 +8,9 @@
 - **Frontend**: JSP, jQuery (간단한 동적 UI)
 - **Database**: H2 (개발용), PostgreSQL/MySQL (운영용)
 - **Build Tool**: Maven
-- **Excel Export**: Apache POI
+- **Excel Export**: Apache POI 5.2.3
 - **Java Version**: 17+
+- **API Documentation**: JavaDoc 기반 주석
 
 ## 프로젝트 구조
 
