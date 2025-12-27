@@ -14,11 +14,25 @@ import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * 보안키 Excel 내보내기 서비스
+ * Apache POI를 활용한 표준 Excel 파일 생성
+ * 금융 시스템의 감사 요구사항을 위한 구조화된 데이터 출력
+ */
 @Service
 public class SecurityKeyExcelExporter {
 
+    /**
+     * 날짜 포맷터
+     * Excel 호환성을 위한 표준 날짜 형식 사용
+     */
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     * 보안키 목록을 Excel 파일로 내보내기
+     * 표준 XLSX 포맷으로 헤더와 데이터 행 생성
+     * null 값 처리 및 자동 컬럼 너비 조정
+     */
     public void export(List<SecurityKey> keys, OutputStream out) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             XSSFSheet sheet = workbook.createSheet("SecurityKeys");
@@ -62,6 +76,11 @@ public class SecurityKeyExcelExporter {
         }
     }
 
+    /**
+     * null 값 처리 헬퍼 메서드
+     * Excel 셀에 null 값이 들어갈 경우 빈 문자열로 변환
+     * Excel 호환성을 위한 안전한 값 변환
+     */
     private String nullToEmpty(String s) {
         return s == null ? "" : s;
     }
